@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — Plataforma Fantasy Football</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B1712;
+  --surface:#142A20;
+  --surface-2:#1B3527;
+  --border:#24402F;
+  --green:#4CAF6B;
+  --green-dim:#2E5B3E;
+  --amber:#F5B942;
+  --coral:#E8593C;
+  --text:#F3F1E8;
+  --text-dim:#9FB3A6;
+  --text-faint:#6C8577;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter',sans-serif;
+  min-height:100vh;
+  padding:24px 16px 60px;
+}
+.app{
+  max-width:960px;
+  margin:0 auto;
+}
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 20px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  margin-bottom:20px;
+}
+.brand{
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:700;
+  font-size:22px;
+  letter-spacing:0.5px;
+  text-transform:uppercase;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.brand .dot{width:10px;height:10px;border-radius:50%;background:var(--green);}
+.credits{
+  display:flex;
+  gap:10px;
+}
+.credit-pill{
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:6px 14px;
+  font-size:13px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.credit-pill b{font-family:'Barlow Condensed',sans-serif; font-size:16px; color:var(--amber); font-weight:600;}
+.credit-pill.earned b{color:var(--green);}
+
+.tabs{
+  display:flex;
+  gap:6px;
+  margin-bottom:20px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:5px;
+}
+.tab{
+  flex:1;
+  text-align:center;
+  padding:10px 8px;
+  border-radius:9px;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  color:var(--text-dim);
+  transition:all .15s ease;
+  user-select:none;
+}
+.tab.active{background:var(--green); color:#082712;}
+.tab:not(.active):hover{background:var(--surface-2); color:var(--text);}
+
+.view{display:none;}
+.view.active{display:block;}
+
+.panel-title{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:26px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.3px;
+  margin-bottom:4px;
+}
+.panel-sub{color:var(--text-dim); font-size:13px; margin-bottom:18px;}
+
+/* ---------- PITCH ---------- */
+.layout-2col{
+  display:grid;
+  grid-template-columns:1fr 300px;
+  gap:20px;
+}
+@media (max-width:800px){ .layout-2col{grid-template-columns:1fr;} }
+
+.pitch-wrap{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:16px;
+}
+.pitch{
+  position:relative;
+  aspect-ratio: 3 / 3.6;
+  border-radius:10px;
+  overflow:hidden;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      #1F4A2E 0px, #1F4A2E 40px,
+      #1B4128 40px, #1B4128 80px
+    );
+  border:2px solid rgba(243,241,232,0.25);
+}
+.pitch svg{position:absolute; inset:0; width:100%; height:100%;}
+.line{fill:none; stroke:rgba(243,241,232,0.35); stroke-width:1.5;}
+
+.slot{
+  position:absolute;
+  transform:translate(-50%,-50%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  cursor:pointer;
+}
+.chip{
+  width:44px;height:44px;
+  border-radius:50%;
+  background:var(--surface-2);
+  border:2px solid var(--text-faint);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:600;
+  font-size:15px;
+  position:relative;
+  transition:border-color .15s ease;
+}
+.slot:hover .chip{border-color:var(--green);}
+.chip.gk{border-color:var(--amber);}
+.rating-badge{
+  position:absolute;
+  top:-8px; right:-10px;
+  background:var(--amber);
+  color:#3D2A02;
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:700;
+  font-size:11px;
+  border-radius:5px;
+  padding:1px 5px;
+  line-height:1.3;
+}
+.slot-name{
+  font-size:10px;
+  color:var(--text-dim);
+  text-align:center;
+  white-space:nowrap;
+}
+
+.bench-row{
+  display:flex;
+  gap:10px;
+  overflow-x:auto;
+  padding:14px 4px 4px;
+  border-top:1px dashed var(--border);
+  margin-top:14px;
+}
+.bench-chip{
+  flex:0 0 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  opacity:0.85;
+}
+.bench-chip .chip{width:38px;height:38px; font-size:13px;}
+
+.side-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:18px;
+  margin-bottom:16px;
+}
+.side-card h3{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:16px;
+  text-transform:uppercase;
+  letter-spacing:0.4px;
+  margin-bottom:12px;
+  color:var(--text-dim);
+}
+.stat-row{
+  display:flex;
+  justify-content:space-between;
+  font-size:13px;
+  padding:7px 0;
+  border-bottom:1px solid var(--border);
+}
+.stat-row:last-child{border-bottom:none;}
+.stat-row b{font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:15px;}
+.btn{
+  width:100%;
+  background:var(--green);
+  color:#082712;
+  border:none;
+  border-radius:10px;
+  padding:11px;
+  font-weight:700;
+  font-size:13px;
+  font-family:'Inter',sans-serif;
+  cursor:pointer;
+  margin-top:6px;
+}
+.btn.ghost{
+  background:transparent;
+  border:1px solid var(--border);
+  color:var(--text);
+}
+
+/* ---------- FORMATION PILLS ---------- */
+.formation-pills{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:14px;
+}
+.f-pill{
+  padding:7px 14px;
+  border-radius:20px;
+  border:1px solid var(--border);
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+  background:var(--surface-2);
+  color:var(--text-dim);
+}
+.f-pill.active{background:var(--green); color:#082712; border-color:var(--green);}
+
+.mult-row{
+  display:flex;
+  gap:10px;
+  margin-bottom:14px;
+}
+.mult-chip{
+  flex:1;
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:8px 10px;
+  text-align:center;
+}
+.mult-chip .label{font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.4px;}
+.mult-chip .val{font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:600; color:var(--amber);}
+
+.booster-slots{display:flex; gap:10px; margin-top:6px;}
+.booster-slot{
+  flex:1;
+  border:1.5px dashed var(--border);
+  border-radius:12px;
+  padding:12px;
+  text-align:center;
+  font-size:11px;
+  color:var(--text-faint);
+  cursor:pointer;
+}
+.booster-slot.filled{
+  border-style:solid;
+  border-color:var(--coral);
+  background:rgba(232,89,60,0.08);
+  color:var(--text);
+}
+.booster-slot .b-name{font-weight:600; font-size:12px; margin-top:2px;}
+
+/* ---------- RANKING ---------- */
+.rank-list{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  overflow:hidden;
+}
+.rank-row{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:13px 18px;
+  border-bottom:1px solid var(--border);
+}
+.rank-row:last-child{border-bottom:none;}
+.rank-row.me{background:rgba(76,175,107,0.08); border-left:3px solid var(--green);}
+.rank-num{
+  width:26px;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:16px;
+  font-weight:600;
+  color:var(--text-dim);
+  text-align:center;
+}
+.rank-row:nth-child(1) .rank-num{color:#F5B942;}
+.rank-row:nth-child(2) .rank-num{color:#C9CBCE;}
+.rank-row:nth-child(3) .rank-num{color:#C4854A;}
+.rank-name{flex:1; font-size:14px; font-weight:500;}
+.rank-name .sub{display:block; font-size:11px; color:var(--text-faint); font-weight:400;}
+.rank-pts{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:20px;
+  font-weight:700;
+  color:var(--amber);
+  min-width:70px;
+  text-align:right;
+}
+.rank-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:14px;
+}
+.rank-header .meta{font-size:12px; color:var(--text-dim);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span>ONCE IDEAL</div>
+    <div class="credits">
+      <div class="credit-pill">Comprados <b>42</b></div>
+      <div class="credit-pill earned">Ganados <b>187</b></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="plantel">Mi plantel</div>
+    <div class="tab" data-tab="alineacion">Alineación de torneo</div>
+    <div class="tab" data-tab="ranking">Ranking en vivo</div>
+  </div>
+
+  <!-- ============ VIEW 1: PLANTEL ============ -->
+  <div class="view active" id="view-plantel">
+    <div class="panel-title">Mi plantel</div>
+    <div class="panel-sub">19 jugadores máximo · gestión global, se usa en todos los torneos</div>
+
+    <div class="layout-2col">
+      <div class="pitch-wrap">
+        <div class="pitch" id="pitch-plantel"></div>
+        <div class="bench-row" id="bench-plantel"></div>
+      </div>
+
+      <div>
+        <div class="side-card">
+          <h3>Resumen del plantel</h3>
+          <div class="stat-row"><span>Titulares base</span><b>11</b></div>
+          <div class="stat-row"><span>Banca</span><b>7 / 8</b></div>
+          <div class="stat-row"><span>Transferencias temporada</span><b>1 / 4</b></div>
+          <div class="stat-row"><span>Tarjeta de cortesía</span><b>Sin usar</b></div>
+          <button class="btn">Fichar jugador</button>
+          <button class="btn ghost">Ver historial de fichajes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ VIEW 2: ALINEACION ============ -->
+  <div class="view" id="view-alineacion">
+    <div class="panel-title">Alineación · Torneo corto 5 fechas</div>
+    <div class="panel-sub">Cierra en 18h 24m · esta alineación solo aplica a este torneo</div>
+
+    <div class="layout-2col">
+      <div class="pitch-wrap">
+        <div class="formation-pills">
+          <div class="f-pill active" data-formation="433">4-3-3</div>
+          <div class="f-pill" data-formation="352">3-5-2</div>
+          <div class="f-pill" data-formation="442">4-4-2</div>
+          <div class="f-pill" data-formation="343">3-4-3</div>
+        </div>
+        <div class="mult-row" id="mult-row"></div>
+        <div class="pitch" id="pitch-alineacion"></div>
+      </div>
+
+      <div>
+        <div class="side-card">
+          <h3>Boosters (máx. 2)</h3>
+          <div class="booster-slots">
+            <div class="booster-slot filled">Multiplicador<div class="b-name">x1.5</div></div>
+            <div class="booster-slot">Vacío<div class="b-name">Elegir</div></div>
+          </div>
+        </div>
+        <div class="side-card">
+          <h3>Baúl disponible</h3>
+          <div class="stat-row"><span>Anulador de formación</span><b>2</b></div>
+          <div class="stat-row"><span>Multiplicador x1.5</span><b>1</b></div>
+          <div class="stat-row"><span>Cambio de posición</span><b>0</b></div>
+          <div class="stat-row"><span>Bench Boost</span><b>0</b></div>
+        </div>
+        <button class="btn">Guardar alineación</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ VIEW 3: RANKING ============ -->
+  <div class="view" id="view-ranking">
+    <div class="panel-title">Ranking en vivo</div>
+    <div class="panel-sub">Torneo corto 5 fechas · fecha 3 de 5 en curso</div>
+
+    <div class="rank-list" id="rank-list"></div>
+  </div>
+
+</div>
+
+<script>
+// ---------- Formation coordinates (percent-based) ----------
+const formations = {
+  '433': {label:'4-3-3', def:{count:4, mult:'1.00'}, mid:{count:3, mult:'1.00'}, fwd:{count:3, mult:'1.00'},
+    pos: [
+      {row:'gk', x:50, y:90},
+      {row:'def', x:15, y:70},{row:'def', x:38, y:73},{row:'def', x:62, y:73},{row:'def', x:85, y:70},
+      {row:'mid', x:25, y:48},{row:'mid', x:50, y:45},{row:'mid', x:75, y:48},
+      {row:'fwd', x:20, y:20},{row:'fwd', x:50, y:15},{row:'fwd', x:80, y:20}
+    ]},
+  '352': {label:'3-5-2', def:{count:3, mult:'1.33'}, mid:{count:5, mult:'0.60'}, fwd:{count:2, mult:'1.50'},
+    pos: [
+      {row:'gk', x:50, y:90},
+      {row:'def', x:25, y:72},{row:'def', x:50, y:75},{row:'def', x:75, y:72},
+      {row:'mid', x:10, y:50},{row:'mid', x:32, y:46},{row:'mid', x:50, y:52},{row:'mid', x:68, y:46},{row:'mid', x:90, y:50},
+      {row:'fwd', x:35, y:16},{row:'fwd', x:65, y:16}
+    ]},
+  '442': {label:'4-4-2', def:{count:4, mult:'1.00'}, mid:{count:4, mult:'0.75'}, fwd:{count:2, mult:'1.50'},
+    pos: [
+      {row:'gk', x:50, y:90},
+      {row:'def', x:15, y:70},{row:'def', x:38, y:73},{row:'def', x:62, y:73},{row:'def', x:85, y:70},
+      {row:'mid', x:12, y:46},{row:'mid', x:38, y:50},{row:'mid', x:62, y:50},{row:'mid', x:88, y:46},
+      {row:'fwd', x:35, y:16},{row:'fwd', x:65, y:16}
+    ]},
+  '343': {label:'3-4-3', def:{count:3, mult:'1.33'}, mid:{count:4, mult:'0.75'}, fwd:{count:3, mult:'1.00'},
+    pos: [
+      {row:'gk', x:50, y:90},
+      {row:'def', x:25, y:72},{row:'def', x:50, y:75},{row:'def', x:75, y:72},
+      {row:'mid', x:12, y:48},{row:'mid', x:38, y:50},{row:'mid', x:62, y:50},{row:'mid', x:88, y:48},
+      {row:'fwd', x:20, y:18},{row:'fwd', x:50, y:14},{row:'fwd', x:80, y:18}
+    ]}
+};
+
+const squadNames = ['E. Salazar (POR)','R. Uribe','J. Correa','M. Osei','F. Duarte','T. Almada','D. Restrepo','L. Ferreira','K. Owusu','N. Bianchi','S. Vidal','A. Nguyen','P. Castaño','B. Okafor','C. Miranda','H. Villalba','G. Petrov','W. Sanabria','I. Camara'];
+const ratings = [7.2,6.8,7.9,6.4,8.1,6.9,7.4,6.1,8.5,7.0,6.7,7.3,6.5,7.8,6.9,7.1,6.3,7.6,6.8];
+
+function pitchLines(){
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="none">
+    <rect x="4" y="4" width="92" height="92" class="line"/>
+    <line x1="4" y1="52" x2="96" y2="52" class="line"/>
+    <circle cx="50" cy="52" r="10" class="line"/>
+    <rect x="26" y="4" width="48" height="16" class="line"/>
+    <rect x="26" y="80" width="48" height="16" class="line"/>
+  </svg>`;
+}
+
+function renderPitch(containerId, formationKey, withBadge){
+  const f = formations[formationKey];
+  const el = document.getElementById(containerId);
+  let html = pitchLines();
+  f.pos.forEach((p,i)=>{
+    const isGK = p.row === 'gk';
+    const rating = ratings[i % ratings.length];
+    const name = squadNames[i % squadNames.length].split(' ')[0] + ' ' + squadNames[i % squadNames.length].split(' ')[1];
+    html += `<div class="slot" style="left:${p.x}%; top:${p.y}%;">
+      <div class="chip ${isGK?'gk':''}">${isGK?'POR':p.row.toUpperCase().slice(0,3)}${withBadge?`<span class="rating-badge">${rating}</span>`:''}</div>
+      <div class="slot-name">${name}</div>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+function renderBench(containerId){
+  const el = document.getElementById(containerId);
+  let html = '';
+  for(let i=11;i<18;i++){
+    const name = squadNames[i % squadNames.length].split(' ')[0];
+    html += `<div class="bench-chip"><div class="chip">${name.slice(0,1)}</div><div class="slot-name">${name}</div></div>`;
+  }
+  el.innerHTML = html;
+}
+
+function renderMultRow(formationKey){
+  const f = formations[formationKey];
+  document.getElementById('mult-row').innerHTML = `
+    <div class="mult-chip"><div class="label">Defensas</div><div class="val">x${f.def.mult}</div></div>
+    <div class="mult-chip"><div class="label">Medio</div><div class="val">x${f.mid.mult}</div></div>
+    <div class="mult-chip"><div class="label">Delanteros</div><div class="val">x${f.fwd.mult}</div></div>
+  `;
+}
+
+renderPitch('pitch-plantel', '433', false);
+renderBench('bench-plantel');
+renderPitch('pitch-alineacion', '433', true);
+renderMultRow('433');
+
+document.querySelectorAll('.f-pill').forEach(pill=>{
+  pill.addEventListener('click', ()=>{
+    document.querySelectorAll('.f-pill').forEach(p=>p.classList.remove('active'));
+    pill.classList.add('active');
+    const key = pill.dataset.formation;
+    renderPitch('pitch-alineacion', key, true);
+    renderMultRow(key);
+  });
+});
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('view-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ---------- Ranking ----------
+const rankData = [
+  {name:'Camilo R.', team:'Los Halcones FC', pts:412.6},
+  {name:'Valentina P.', team:'Sabana United', pts:398.2},
+  {name:'Andrés M.', team:'Once Cafetero', pts:387.9},
+  {name:'Tú', team:'Mi equipo', pts:374.1, me:true},
+  {name:'Diana L.', team:'Cóndor Real', pts:369.8},
+  {name:'Santiago V.', team:'Guardianes CF', pts:355.0},
+  {name:'Laura G.', team:'Pacífico United', pts:341.4},
+  {name:'Julián T.', team:'Andes Atlético', pts:333.7}
+];
+document.getElementById('rank-list').innerHTML =
+  `<div style="padding:14px 18px;" class="rank-header"><span class="meta">${rankData.length} equipos inscritos</span><span class="meta">Actualizado hace 2 min</span></div>` +
+  rankData.map((r,i)=>`
+    <div class="rank-row ${r.me?'me':''}">
+      <div class="rank-num">${i+1}</div>
+      <div class="rank-name">${r.name}${r.me?' <span style="color:var(--green); font-size:11px;">(tú)</span>':''}<span class="sub">${r.team}</span></div>
+      <div class="rank-pts">${r.pts.toFixed(1)}</div>
+    </div>
+  `).join('');
+</script>
+</body>
+</html>
