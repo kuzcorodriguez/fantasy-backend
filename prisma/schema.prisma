@@ -1,0 +1,323 @@
+// Esquema de base de datos — traducción directa de la sección 2 de arquitectura_tecnica.md
+// Motor: SQLite para desarrollo local sin instalación adicional.
+// Para producción: cambiar `provider = "sqlite"` por `provider = "postgresql"`
+// y ajustar DATABASE_URL en .env — el resto del esquema no requiere cambios.
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ---------- 2.1 Usuarios y cumplimiento ----------
+model User {
+  id                         String   @id @default(cuid())
+  email                      String   @unique
+  phone                      String   @unique
+  passwordHash               String
+  kycDocumentPhotoUrl        String?
+  kycVerified                Boolean  @default(false)
+  kycVerifiedAt              DateTime?
+  welcomeBonusClaimed        Boolean  @default(false)
+  courtesySigningCardUsed    Boolean  @default(false)
+  createdAt                  DateTime @default(now())
+
+  creditTransactions         CreditTransaction[]
+  squadPlayers               SquadPlayer[]
+  seasonTransferUsage        SeasonTransferUsage[]
+  tournamentEntries          TournamentEntry[]
+  tournamentLineups          TournamentLineup[]
+  boosterInventory           UserBoosterInventory[]
+  seasonObjectiveProgress    SeasonObjectiveProgress[]
+  tournamentMatchdayScores   TournamentMatchdayScore[]
+  marketplaceRedemptions     MarketplaceRedemption[]
+}
+
+// ---------- 2.2 Créditos (libro mayor / ledger) ----------
+// credit_type: "comprado" | "ganado"
+// source: "compra_dinero_real" | "bono_bienvenida" | "premio_torneo" | "compra_jugador" |
+//         "venta_jugador" | "inscripcion_torneo" | "compra_booster" |
+//         "reembolso_torneo_cancelado" | "canje_marketplace"
+model CreditTransaction {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  creditType   String   // "comprado" | "ganado"
+  amount       Float    // positivo = entra, negativo = sale
+  source       String
+  referenceId  String?  // id de torneo, jugador, canje, etc.
+  createdAt    DateTime @default(now())
+
+  @@index([userId, creditType])
+}
+
+// ---------- 2.3 Ligas y jugadores reales (cacheados de la API) ----------
+model League {
+  id             String   @id @default(cuid())
+  externalApiId  Int      @unique
+  name           String
+  active         Boolean  @default(true)
+
+  realPlayers    RealPlayer[]
+  matchdays      Matchday[]
+  tournaments    Tournament[]
+}
+
+model RealPlayer {
+  id              String   @id @default(cuid())
+  externalApiId   Int      @unique
+  leagueId        String
+  league          League   @relation(fields: [leagueId], references: [id])
+  teamName        String
+  fullName        String
+  position        String   // "arquero" | "defensa" | "mediocampista" | "delantero"
+  active          Boolean  @default(true)
+
+  squadPlayers        SquadPlayer[]
+  matchRatings        PlayerMatchRating[]
+  injuryAlerts        PlayerInjuryAlert[]
+  lineupAppearances   TournamentLineupPlayer[]
+}
+
+model Matchday {
+  id           String   @id @default(cuid())
+  leagueId     String
+  league       League   @relation(fields: [leagueId], references: [id])
+  roundNumber  Int
+  deadlineAt   DateTime // 24h antes del primer partido de la jornada
+
+  fixtures     Fixture[]
+  tournamentLineups TournamentLineup[]
+  firstOfTournaments Tournament[] @relation("FirstMatchday")
+  lastOfTournaments  Tournament[] @relation("LastMatchday")
+
+  @@unique([leagueId, roundNumber])
+}
+
+model Fixture {
+  id              String   @id @default(cuid())
+  externalApiId   Int      @unique
+  matchdayId      String
+  matchday        Matchday @relation(fields: [matchdayId], references: [id])
+  homeTeam        String
+  awayTeam        String
+  kickoffAt       DateTime
+  status          String   @default("programado") // "programado" | "en_curso" | "finalizado"
+}
+
+model PlayerMatchRating {
+  id             String   @id @default(cuid())
+  realPlayerId   String
+  realPlayer     RealPlayer @relation(fields: [realPlayerId], references: [id])
+  fixtureId      String
+  rating         Float    // 0.0 a 10.0, tal como lo entrega la API
+  syncedAt       DateTime @default(now())
+
+  @@unique([realPlayerId, fixtureId])
+}
+
+model PlayerInjuryAlert {
+  id             String   @id @default(cuid())
+  realPlayerId   String
+  realPlayer     RealPlayer @relation(fields: [realPlayerId], references: [id])
+  status         String   // "duda" | "confirmado_fuera" | "expulsado"
+  reportedAt     DateTime @default(now())
+}
+
+// ---------- 2.4 Plantel del usuario (global) y temporadas ----------
+model Season {
+  id            String   @id @default(cuid())
+  seasonNumber  Int      // 1 a 6 dentro del año
+  startDate     DateTime
+  endDate       DateTime
+
+  transferUsage        SeasonTransferUsage[]
+  objectiveProgress    SeasonObjectiveProgress[]
+}
+
+model SquadPlayer {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  realPlayerId   String
+  realPlayer     RealPlayer @relation(fields: [realPlayerId], references: [id])
+  acquiredAt     DateTime @default(now())
+  acquiredVia    String   // "compra_inicial" | "fichaje_temporada" | "tarjeta_cortesia"
+  soldAt         DateTime?
+  status         String   @default("activo") // "activo" | "vendido"
+  // Regla de negocio aplicada en la capa de servicio: máx. 19 registros "activo" por usuario.
+}
+
+model SeasonTransferUsage {
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  seasonId       String
+  season         Season   @relation(fields: [seasonId], references: [id])
+  transfersUsed  Int      @default(0) // máx. 4 por temporada
+  buysCount      Int      @default(0) // usado para el objetivo del booster Arquero x2
+  sellsCount     Int      @default(0)
+
+  @@id([userId, seasonId])
+}
+
+// ---------- 2.5 Formaciones ----------
+model Formation {
+  id             String   @id @default(cuid())
+  name           String   @unique // "4-3-3", "3-5-2", etc.
+  defCount       Int
+  midCount       Int
+  fwdCount       Int
+  defMultiplier  Float    // 4 / defCount
+  midMultiplier  Float    // 3 / midCount
+  fwdMultiplier  Float    // 3 / fwdCount
+  // El arquero siempre puntúa x1 — no requiere columna, se asume en el motor de cálculo.
+
+  tournamentLineups TournamentLineup[]
+}
+
+// ---------- 2.6 Torneos ----------
+model Tournament {
+  id                      String   @id @default(cuid())
+  leagueId                String
+  league                  League   @relation(fields: [leagueId], references: [id])
+  name                    String
+  length                  String   // "completo" | "corto_5" | "corto_10"
+  prizeMode               String   // "unico_ganador" | "top_3" | "top_5" | "top_10" | "liga_privada"
+  entryCostCredits        Float
+  minParticipants         Int
+  maxParticipants         Int?     // null = sin límite
+  registrationOpensAt     DateTime
+  registrationClosesAt    DateTime
+  firstMatchdayId         String?
+  firstMatchday           Matchday? @relation("FirstMatchday", fields: [firstMatchdayId], references: [id])
+  lastMatchdayId          String?
+  lastMatchday            Matchday? @relation("LastMatchday", fields: [lastMatchdayId], references: [id])
+  status                  String   @default("abierto") // "abierto" | "cancelado_minimo_no_alcanzado" | "en_curso" | "finalizado"
+  createdAt               DateTime @default(now())
+
+  entries                 TournamentEntry[]
+  lineups                 TournamentLineup[]
+  matchdayScores          TournamentMatchdayScore[]
+}
+
+model TournamentEntry {
+  id             String   @id @default(cuid())
+  tournamentId   String
+  tournament     Tournament @relation(fields: [tournamentId], references: [id])
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  joinedAt       DateTime @default(now())
+  refunded       Boolean  @default(false) // true si el torneo se canceló por no alcanzar el mínimo
+
+  @@unique([tournamentId, userId])
+}
+
+// ---------- 2.7 Alineación por torneo y jornada ----------
+model TournamentLineup {
+  id             String   @id @default(cuid())
+  tournamentId   String
+  tournament     Tournament @relation(fields: [tournamentId], references: [id])
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  matchdayId     String
+  matchday       Matchday @relation(fields: [matchdayId], references: [id])
+  formationId    String
+  formation      Formation @relation(fields: [formationId], references: [id])
+  lockedAt       DateTime? // se completa al pasar el deadline de la jornada
+
+  players        TournamentLineupPlayer[]
+
+  @@unique([tournamentId, userId, matchdayId])
+}
+
+model TournamentLineupPlayer {
+  lineupId          String
+  lineup            TournamentLineup @relation(fields: [lineupId], references: [id])
+  realPlayerId      String
+  realPlayer        RealPlayer @relation(fields: [realPlayerId], references: [id])
+  isStarting        Boolean
+  assignedPosition  String?  // relevante para el booster de cambio de posición
+
+  @@id([lineupId, realPlayerId])
+}
+
+// ---------- 2.8 Boosters ----------
+model BoosterCatalog {
+  id             String   @id @default(cuid())
+  code           String   @unique // "anulador_formacion" | "multiplicador_1_5x" | "multiplicador_2x" |
+                                    // "cambio_posicion" | "venta_precio_completo" | "bench_boost" | "arquero_2x" | "fichaje_cortesia"
+  name           String
+  description    String?
+  unlockType     String   // "gratuito_inscripcion" | "comprable" | "premio" | "objetivo_temporada" | "unico_bienvenida"
+
+  inventory      UserBoosterInventory[]
+}
+
+model UserBoosterInventory {
+  id                        String   @id @default(cuid())
+  userId                    String
+  user                      User     @relation(fields: [userId], references: [id])
+  boosterId                 String
+  booster                   BoosterCatalog @relation(fields: [boosterId], references: [id])
+  obtainedVia               String
+  obtainedAt                DateTime @default(now())
+  lockedToTournamentId      String?  // null hasta que se asigna a un torneo
+  usedAt                    DateTime?
+  usedOnRealPlayerId        String?
+  usedOnMatchdayId          String?
+}
+
+model SeasonObjectiveProgress {
+  userId          String
+  user            User   @relation(fields: [userId], references: [id])
+  seasonId        String
+  season          Season @relation(fields: [seasonId], references: [id])
+  objectiveCode   String // "inscripcion_5_torneos" | "compra_venta_4_jugadores" | etc.
+  progressCount   Int    @default(0)
+  completed       Boolean @default(false)
+  completedAt     DateTime?
+
+  @@id([userId, seasonId, objectiveCode])
+}
+
+// ---------- 2.9 Puntajes y ranking ----------
+model TournamentMatchdayScore {
+  tournamentId   String
+  tournament     Tournament @relation(fields: [tournamentId], references: [id])
+  userId         String
+  user           User   @relation(fields: [userId], references: [id])
+  matchdayId     String
+  points         Float  // rating x multiplicador de titulares + efecto de boosters
+  calculatedAt   DateTime @default(now())
+
+  @@id([tournamentId, userId, matchdayId])
+}
+// El ranking del torneo se calcula agregando esta tabla (SUM points GROUP BY userId),
+// no se almacena como tabla aparte, para evitar inconsistencias de sincronización.
+
+// ---------- 2.10 Marketplace ----------
+model MarketplaceItem {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  creditCost     Float
+  stock          Int      @default(0)
+  active         Boolean  @default(true)
+
+  redemptions    MarketplaceRedemption[]
+}
+
+model MarketplaceRedemption {
+  id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id])
+  itemId             String
+  item               MarketplaceItem @relation(fields: [itemId], references: [id])
+  creditsSpent       Float
+  status             String   @default("pendiente") // "pendiente" | "enviado" | "entregado"
+  shippingAddress    String?
+  createdAt          DateTime @default(now())
+}
