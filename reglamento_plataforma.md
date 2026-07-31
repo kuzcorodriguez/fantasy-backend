@@ -3,7 +3,7 @@
 **Versión**: 0.2 — Documento de trabajo
 **Propósito de este documento**: describir de forma completa y autocontenida el modelo de negocio, la mecánica de juego y el fundamento regulatorio de la plataforma, de modo que cualquier lector (equipo interno, asesor legal, inversionista) pueda entenderlo sin contexto previo.
 
-> **Nota legal**: este documento describe el diseño funcional del producto y el razonamiento detrás de sus reglas. No constituye asesoría legal ni garantiza una clasificación regulatoria específica. El proyecto está diseñado desde el inicio para operar dentro del marco legal colombiano de "Juegos de Habilidad y Destreza" en lugar del régimen de "Juegos de Suerte y Azar" (Ley 643 de 2001, supervisado por Coljuegos), pero la validación final de esta clasificación debe hacerla un abogado especializado en regulación de juegos antes de cualquier lanzamiento comercial.
+> **Nota legal**: este documento describe el diseño funcional del producto y el razonamiento detrás de sus reglas. No constituye asesoría legal ni garantiza una clasificación regulatoria específica. El proyecto está diseñado desde el inicio para operar dentro del marco legal colombiano de "Juegos de Habilidad y Destreza" en lugar del régimen de "Juegos de Suerte y Azar" (Ley 643 de 2001, supervisado por Coljuegos), pero la validación final de esta clasificación debe hacerla un abogado especializado en  regulación de juegos antes de cualquier lanzamiento comercial.
 
 ---
 
