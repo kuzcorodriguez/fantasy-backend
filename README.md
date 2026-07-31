@@ -11,7 +11,7 @@ cálculo de puntaje y estructura del servidor.
 - **SQLite** en desarrollo local (cero instalación adicional) — en producción se cambia a
   PostgreSQL ajustando solo `DATABASE_URL` y el `provider` del datasource en el schema.
 
-## Cómo correrlo localmente (Visual Studio Code)
+## Cómo  correrlo localmente (Visual Studio Code)
 
 **Requisito único**: tener [Node.js](https://nodejs.org) instalado (versión 20 o superior).
 
